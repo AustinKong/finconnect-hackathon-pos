@@ -7,6 +7,7 @@ function App() {
   const [amount, setAmount] = useState('')
   const [status, setStatus] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   const handleTapCard = async () => {
     if (!cardNumber || !merchantId || !amount) {
@@ -40,6 +41,35 @@ function App() {
       setStatus(`Error: ${error.message}`)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleAccrueFiveDays = async () => {
+    setIsDropdownOpen(false)
+    setStatus('Accruing 5 days...')
+
+    try {
+      const now = Math.floor(Date.now() / 1000) // Current time in seconds
+      const fiveDaysAgo = now - (5 * 24 * 60 * 60) // 5 days ago in seconds
+
+      const response = await fetch('http://localhost:3000/yield/accrue', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          now_sec: fiveDaysAgo,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setStatus(`Accrue Success! Response: ${JSON.stringify(data)}`)
+      } else {
+        setStatus(`Accrue Error: ${response.status} ${response.statusText}`)
+      }
+    } catch (error) {
+      setStatus(`Accrue Error: ${error.message}`)
     }
   }
 
@@ -99,6 +129,26 @@ function App() {
         {status && (
           <div className={`status-message ${status.includes('Error') ? 'error' : 'success'}`}>
             {status}
+          </div>
+        )}
+      </div>
+
+      {/* Wrench button at bottom right */}
+      <div className="wrench-container">
+        <button 
+          className="wrench-button"
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        >
+          🔧
+        </button>
+        {isDropdownOpen && (
+          <div className="dropdown-menu">
+            <button 
+              className="dropdown-item"
+              onClick={handleAccrueFiveDays}
+            >
+              +5 days
+            </button>
           </div>
         )}
       </div>
